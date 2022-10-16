@@ -1,7 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 # Loading the data
 df = pd.read_csv('data.csv')
@@ -97,10 +96,6 @@ df.drop(columns=["mh_coverage", "primary_tech_role"], inplace=True)
 binary.remove("mh_coverage")
 binary.remove("primary_tech_role")
 
-for feature in binary:    
-    # if the feature is missing, remove the row, since I don't want to make assumptions about binary data
-    df.dropna(subset=[feature], inplace=True, axis=0)
-
 # re-indexing the dataframe
 df.reset_index(drop=True, inplace=True)
 
@@ -108,7 +103,6 @@ df.reset_index(drop=True, inplace=True)
 df.drop(columns=["mh_resources", "mh_time_affect"], inplace=True)
 ordered_categorical.remove("mh_resources")
 ordered_categorical.remove("mh_time_affect")
-
 
 # turn all binary data into 0s and 1s
 for feature in binary:
@@ -179,29 +173,71 @@ for feature in numerical:
 
 # IMPUTING MISSING VALUES
 
-# impute missing values with the mode of the column
+"""
+We will now imput all missing values. To make sure that we're not messing anything up, here are some rules we will follow while imputing:
+1. If a feature is not binary, we will impute the missing values with the RandomForestRegressor
+2. If a feature is binary, we will impute the missing values with the RandomForestClassifier (because it's a binary classification problem)
+3. We will only take features into account that have no more than 20% of their values missing
+4. If a feature has more than 50% of its values missing, we will drop it for good.
+5. While imputing, we can only take data points without any missing values into account, because we can't use NaNs when training the RandomForest models
+"""
+
+# dropping all features with more than 50% of their values missing
 for feature in df.columns:
-    if feature in binary:
+    if df[feature].isna().sum() / df.shape[0] > 0.5:
+        df.drop(feature, axis=1, inplace=True)
+
+# first we will drop all features that have more than 20% of their values missing
+impute_df = df.copy()
+for feature in impute_df.columns:
+    if impute_df[feature].isna().sum() / len(impute_df) > 0.2:
+        impute_df.drop(feature, axis=1, inplace=True)
+
+# imputing all non-binary features with the RandomForestRegressor
+for feature in df.columns:
+    # skip binary features. Also skip feature if there are no missing values to speed up computation
+    if feature in binary or df[feature].isna().sum() == 0:
         continue
-    df[feature] = df[feature].apply(lambda x: df[feature].mode()[0] if pd.isnull(x) else x)
 
-# imputing missing values in binary features with regression, based on all other features
-for feature in binary:
-    # create a copy of the dataframe without the feature we want to impute
-    df_copy = df.drop(feature, axis=1)
-    # create a new dataframe with only the feature we want to impute
-    df_to_impute = df[[feature]]
-    # split the data into train and test
-    X_train, X_test, y_train, y_test = train_test_split(df_copy, df_to_impute, test_size=0.2, random_state=42)
-    # train the model
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    # predict the missing values
-    y_pred = model.predict(X_test)
-    # replace the missing values with the predicted values
-    df[feature] = df[feature].apply(lambda x: y_pred[0] if pd.isnull(x) else x)
+    # we copy the impute_df to a new dataframe, because we will drop all rows with missing values
+    n_binary_impute_df = impute_df.copy()
+    n_binary_impute_df.dropna(inplace=True) # drop all rows with missing values
+    
+    # we will now split the data into train and test data
+    X = n_binary_impute_df.drop(feature, axis=1)
+    y = n_binary_impute_df[feature]
 
-print(df.shape)
+    # we train the model on the train data with 20 estimators (because this will take for ages if we don't put in a rather low value)
+    rfr = RandomForestRegressor(n_estimators=20)
+    rfr.fit(X, y)
+
+    # we impute all missing values in df with the predictions of the model
+    df[feature] = df[feature].apply(lambda x: rfr.predict(df.drop(feature, axis=1).dropna())[0] if pd.isna(x) else x)
+
+    print(f"Finished imputing {feature}")
+
+# imputing all binary features with the RandomForestClassifier
+for feature in df.columns:
+    # skip non-binary features. Also skip all features that have no missing values.
+    # Yes, technically all the non-binary features won't have any missing values too, because we just imputed them, but you can never be too save with your code :)
+    if feature not in binary or df[feature].isna().sum() == 0:
+        continue
+    # we copy the impute_df to a new dataframe, because we will drop all rows with missing values
+    binary_impute_df = impute_df.copy()
+    binary_impute_df.dropna(inplace=True) # drop all rows with missing values
+    
+    # we will now split the data into train and test data
+    X = binary_impute_df.drop(feature, axis=1)
+    y = binary_impute_df[feature]
+
+    # we train the model
+    rfc = RandomForestClassifier(n_estimators=20)
+    rfc.fit(X, y)
+
+    # we impute all missing values in df with the predictions of the model
+    df[feature] = df[feature].apply(lambda x: rfc.predict(df.drop(feature, axis=1).dropna())[0] if pd.isna(x) else x)
+    
+    print(f"Finished imputing {feature}")
 
 # FEAUTRE CREATION
 
@@ -209,7 +245,7 @@ print(df.shape)
 # I'm basing this if the person currently has a disorder, believes they have one or has been diagnosed with one professionally
 df['mh_issues'] = df.apply(lambda x: 1 if x["mh_disorder_current"] == 1 or x["condition_belief"] == 1 or x["diagnosed_professionally"] == 1 else 0, axis=1)
 
-# 
+# resetting the age value to the original values and turning replacing the numerical values in "gender" with string values 
 df["age"] = df["age"].apply(lambda x: x * age_range + age_min)
 df["gender"] = df["gender"].apply(lambda x: "male" if x == 0 else "female" if x == 1 else "divers" if x == 2 else "other")
 

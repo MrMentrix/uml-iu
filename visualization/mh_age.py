@@ -5,10 +5,10 @@ from matplotlib.ticker import PercentFormatter
 import json
 
 # Reading the data
-df = pd.read_csv("../preprocessed.csv")
+df = pd.read_csv("./preprocessed.csv")
 
 # getting colors from colors.json
-colors = json.load(open("./colors.json"))
+colors = json.load(open("./visualization/colors.json"))
 
 """Looks at the distribution of mental health issues across different age groups. Visualizes this with a bar chart."""
 
@@ -41,6 +41,7 @@ for p in plt.gca().patches: # for each bar
 
 # rename labels of legend for mh_issues from 0 to "No issues" and from 1 to "Issues" and locating it below the plot
 plt.legend(["No issues", "Had/has issues"], loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
+plt.xticks(rotation=0)
 
 # adding the amount of people per age group to the plot
 for i, v in enumerate(df['age_group'].value_counts()):
@@ -53,5 +54,5 @@ plt.gca().set_facecolor(colors["light_blue"])
 plt.gcf().set_facecolor(colors["light_blue"])
 
 # save plot as "mental_health_age_group.png" in figures folder
-plt.savefig("../figures/mental_health_age_group.png", bbox_inches='tight')
+plt.savefig("./figures/mental_health_age_group.png", bbox_inches='tight')
 plt.show()
