@@ -1,4 +1,6 @@
 {
+    "white":        "#ffffff",
+    "black":        "#000000",
     "dark_red":     "#790000",
     "red":          "#DC3B37",
     "orange":       "#F57656",
@@ -7,5 +9,7 @@
     "dark_green":   "#00663C",
     "light_blue":   "#DCE9FC",
     "blue":         "#00A5CF",
-    "dark_blue":    "#002855"
+    "dark_blue":    "#002855",
+    "purple":       "#8338EC",
+    "pink":         "#FFAFCC"
 }

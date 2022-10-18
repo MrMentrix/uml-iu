@@ -10,6 +10,8 @@ df = pd.read_csv("./preprocessed.csv")
 # getting colors from colors.json
 colors = json.load(open("./visualization/colors.json"))
 
+# note: depending on what shell/ide you use to run this code, you may need to adjust the paths to the data files
+
 """Looks at the distribution of mental health issues across different age groups. Visualizes this with a bar chart."""
 
 # categorizing participants of survey, based on their age

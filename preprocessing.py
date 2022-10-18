@@ -48,7 +48,7 @@ df.columns = [
     'ph_issue_interview',           # Would you be willing to bring up a physical health issue with a potential employer in an interview?
     'ph_interview_reason',          # Why or why not?
     'mh_issue_interview',           # Would you be willing to bring up a mental health issue with a potential employer in an interview?                
-    'mh_interview_reason',          # Why or why not?.1
+    'mh_interview_reason',          # Why or why not?
     'mh_hurts_career',              # Do you feel that being identified as a person with a mental health issue would hurt your career?
     'mh_coworkers_negatively',      # Do you think that team members/co-workers would view you more negatively if they knew you suffered from a mental health issue?
     'mh_share_family_friends',      # How willing would you be to share with friends and family that you have a mental illness?
@@ -72,7 +72,7 @@ df.columns = [
     'work_state',                   # What US state or territory do you work in?
     'work_position',                # Which of the following best describes your work position?
     'remote_work'                   # Do you work remotely?
-]
+]  # type: ignore
 
 binary = ["self_employed", "tech_company", "primary_tech_role", "mh_neg_consq", "mh_coverage", "prev_employer", "diagnosed_professionally", "treatment_professional"]
 ordered_categorical = ["employee_count", "mh_leave", "mh_resources", "mh_time_affect", "prev_mh_resources", "mh_hurts_career", "mh_coworkers_negatively", "mh_share_family_friends", "mh_bad_response_workp", "treatment_interference", "no_treatment_interference", "remote_work", "prev_mh_anonymity"]
@@ -83,7 +83,7 @@ numerical = ["age"]
 # Storing some information about the age so we can re-construct the age distribution later
 # clearing some outliers (age < 20 or age > 80)
 for i in range(len(df)):
-    if df.loc[i, "age"] < 20 or df.loc[i, "age"] > 80:
+    if df.loc[i, "age"] < 20 or df.loc[i, "age"] > 80:  # type: ignore
         df.drop(i, inplace=True, axis=0)
 
 age_range = df["age"].max() - df["age"].min() # saving this for later
@@ -116,9 +116,9 @@ df.drop(columns=to_drop, inplace=True)
 for feature in to_drop:
     categorical.remove(feature)
 
-yes = ["Yes", "Yes, they all did", "Some did", "I was aware of some", "Yes, I was aware of all of them", "Some of them", "Yes, all of them", "Some of my previous employers", "Yes, at all of my previous employers"]
-no = ["No", "No, none did", "No, I only became aware later", "None did", "None of them", "No, at none of my previous employers"]
-unknown = ["Not eligible for coverage / N/A", "I don't know", "I am not sure", "Maybe", "N/A (not currently aware)"]
+yes = ["Yes", "Yes, they all did", "Some did", "I was aware of some", "Yes, I was aware of all of them", "Some of them", "Yes, all of them", "Some of my previous employers", "Yes, at all of my previous employers", "Sometimes, if it comes up", "Yes, always"]
+no = ["No", "No, none did", "No, I only became aware later", "None did", "None of them", "No, at none of my previous employers", "No, because it doesn't matter", "No, because it would impact me negatively"]
+unknown = ["Not eligible for coverage / N/A", "I don't know", "I am not sure", "Maybe", "N/A (not currently aware)", "Not applicable to me"]
 
 for feature in categorical:
     # if value in no, replace with 0, if value in yes, replace with 1, if value in unknown, replace with 0.5
@@ -147,14 +147,14 @@ for feature in ordered_categorical:
 
 # TEXTUAL FEATURES
 
-# dropping all features besides gender and mental health diagnosis. Putting the gender into 4 categories: male/female/diverse/other
+# dropping all features besides gender and mental health diagnosis. Putting the gender into 4 categories: male/female/diversee/other
 gender_dict = {
     "male": ["male", "m", "man", "cis male", "male (trans, ftm)", "fm", "male.", "male (cis)", "sex is male", "dude", "i'm a man why didn't you make this a drop down question. you should of asked sex? and i would of answered yes please. seriously how much text can this take?", "mail", "m|", "cisdude", "cis man"],
     "female": ["female", "I identify as female.", "female assigned at birth", "f", "woman", "cis female", "transitioned, m2f", "female or multi-gender femme", "female/woman", "cisgender female", "mtf", "fem", "female (props for making this a freeform field, though)", "cis-woman", "afab"],
-    "divers": ["bigender", "non-binary", "genderfluid (born female)", "other/transfeminine", "androgynous", "male 9:1 female, roughly", "nb masculine", "genderqueer", "genderfluid", "enby", "malr", "genderqueer woman", "queer", "agender", "fluid", "male/genderqueer", "nonbinary", "genderflux demi-girl", "female-bodied; no feelings about gender", "transgender woman"],
+    "diverse": ["bigender", "non-binary", "genderfluid (born female)", "other/transfeminine", "androgynous", "male 9:1 female, roughly", "nb masculine", "genderqueer", "genderfluid", "enby", "malr", "genderqueer woman", "queer", "agender", "fluid", "male/genderqueer", "nonbinary", "genderflux demi-girl", "female-bodied; no feelings about gender", "transgender woman"],
     "other": ["other", "human", "none of your business", "unicorn"]
 }
-df["gender"] = df['gender'].apply(lambda x: 0 if str(x).strip().lower() in gender_dict["male"] else 1 if str(x).strip().lower() in gender_dict["female"] else 2 if str(x).strip().lower() in gender_dict["divers"] else 3)
+df["gender"] = df['gender'].apply(lambda x: 0 if str(x).strip().lower() in gender_dict["male"] else 1 if str(x).strip().lower() in gender_dict["female"] else 2 if str(x).strip().lower() in gender_dict["diverse"] else 3)
 
 # this way we keep the information about if a person believes they have a mental health condition
 # set condition_belief to 1 if the value isn't nan
@@ -193,10 +193,12 @@ for feature in impute_df.columns:
     if impute_df[feature].isna().sum() / len(impute_df) > 0.2:
         impute_df.drop(feature, axis=1, inplace=True)
 
+classification = binary + ordered_categorical # to differentiate between regression and classification for imputing
+
 # imputing all non-binary features with the RandomForestRegressor
 for feature in df.columns:
-    # skip binary features. Also skip feature if there are no missing values to speed up computation
-    if feature in binary or df[feature].isna().sum() == 0:
+    # skip classification features. Also skip feature if there are no missing values to speed up computation
+    if feature in classification or df[feature].isna().sum() == 0:
         continue
 
     # we copy the impute_df to a new dataframe, because we will drop all rows with missing values
@@ -216,11 +218,11 @@ for feature in df.columns:
 
     print(f"Finished imputing {feature}")
 
-# imputing all binary features with the RandomForestClassifier
+# imputing all binary features and categorical features with the RandomForestClassifier
 for feature in df.columns:
     # skip non-binary features. Also skip all features that have no missing values.
     # Yes, technically all the non-binary features won't have any missing values too, because we just imputed them, but you can never be too save with your code :)
-    if feature not in binary or df[feature].isna().sum() == 0:
+    if feature not in classification or df[feature].isna().sum() == 0:
         continue
     # we copy the impute_df to a new dataframe, because we will drop all rows with missing values
     binary_impute_df = impute_df.copy()
@@ -239,7 +241,7 @@ for feature in df.columns:
     
     print(f"Finished imputing {feature}")
 
-# FEAUTRE CREATION
+# FEATURE CREATION
 
 # I'll add some columns together, namely the ones about mental health diagnosis
 # I'm basing this if the person currently has a disorder, believes they have one or has been diagnosed with one professionally
@@ -247,7 +249,7 @@ df['mh_issues'] = df.apply(lambda x: 1 if x["mh_disorder_current"] == 1 or x["co
 
 # resetting the age value to the original values and turning replacing the numerical values in "gender" with string values 
 df["age"] = df["age"].apply(lambda x: x * age_range + age_min)
-df["gender"] = df["gender"].apply(lambda x: "male" if x == 0 else "female" if x == 1 else "divers" if x == 2 else "other")
+df["gender"] = df["gender"].apply(lambda x: "male" if x == 0 else "female" if x == 1 else "diverse" if x == 2 else "other")
 
 # dropping the rows with "other" because there are only 6 of them and their answers to the gender-question haven't been very informative
 df = df[df["gender"] != "other"]

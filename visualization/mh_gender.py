@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import PercentFormatter
 import json
 
+# note: depending on what shell/ide you use to run this code, you may need to adjust the paths to the data files
+
 # Reading the data
 df = pd.read_csv("./preprocessed.csv")
 
