@@ -1,5 +1,4 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 # Loading the data
@@ -193,7 +192,7 @@ for feature in impute_df.columns:
     if impute_df[feature].isna().sum() / len(impute_df) > 0.2:
         impute_df.drop(feature, axis=1, inplace=True)
 
-classification = binary + ordered_categorical # to differentiate between regression and classification for imputing
+classification = binary + ordered_categorical + categorical # to differentiate between regression and classification for imputing
 
 # imputing all non-binary features with the RandomForestRegressor
 for feature in df.columns:

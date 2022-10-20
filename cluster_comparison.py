@@ -67,25 +67,25 @@ def plot_all(df):
             plt.plot(df[feature], label=feature)
             counter += 1
 
-    # create legend
-            plt.title(f"Comparison of clusters #{fig}")
-            plt.xlabel("Cluster")
-            plt.ylabel("Percentage")
-            plt.xticks([0, 1, 2, 3], ["Red Cluser", "Green Cluster", "Yellow Cluster", "Purple Cluster"])
-            plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    # save final features
+    plt.title(f"Comparison of clusters #{fig}")
+    plt.xlabel("Cluster")
+    plt.ylabel("Percentage")
+    plt.xticks([0, 1, 2, 3], ["Red Cluser", "Green Cluster", "Yellow Cluster", "Purple Cluster"])
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
 
-            # add legend to the right of the plot
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-            # ensure that the legend is not cut off
-            plt.tight_layout()
-            # making plot wider
-            plt.gcf().set_size_inches(10, 5)
+    # add legend to the right of the plot
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    # ensure that the legend is not cut off
+    plt.tight_layout()
+    # making plot wider
+    plt.gcf().set_size_inches(10, 5)
 
-            # setting the entire background color to light_blue
-            plt.gca().set_facecolor(colors["light_blue"])
-            plt.gcf().set_facecolor(colors["light_blue"])
+    # setting the entire background color to light_blue
+    plt.gca().set_facecolor(colors["light_blue"])
+    plt.gcf().set_facecolor(colors["light_blue"])
 
-            plt.savefig(f"./figures/cluster_compare_{fig}.png")
+    plt.savefig(f"./figures/cluster_compare_{fig}.png")
 
 def plot_top(df, n=10):
     # calculate absolut correlation between every feature and issue_score
@@ -142,7 +142,7 @@ def plot_features(df, features):
     plt.gca().set_facecolor(colors["light_blue"])
     plt.gcf().set_facecolor(colors["light_blue"])
 
-    plt.savefig(f"./figures/feature_development.png")
+    plt.savefig(f"./figures/personal_features_development.png")
     plt.clf()
 
 # plot_all(compare_df)
